@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Приложение Vapor
+  app:
+    build:
+      context: .  # Указывает, что нужно собирать из текущей директории (Dockerfile)
+    container_name: fitapp_app
+    environment:
+      CONFIG_PATH: /app/config.json  # Указываем путь к файлу конфигурации в контейнере
+    depends_on:
+      - db  # Сервис зависит от базы данных
+    ports:
+      - '8080:8080'  # Открываем порт 8080 для доступа к приложению
+    volumes:
+      - /Users/tsyar/Desktop/bmstu/bmstu-ppo/bmstu-ppo/src/Backend/Shared/config.json:/app/config.json  # Монтируем файл конфигурации
+    command: ["serve", "--env", "production", "--hostname", "0.0.0.0", "--port", "8080"]  # Команда для запуска приложения
+    networks:
+      - fitapp_network
+
+  # PostgreSQL база данных
+  db:
+    image: postgres:16-alpine
+    container_name: fitapp_db
+    volumes:
+      - db_data:/var/lib/postgresql/data/pgdata
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-password}
+      POSTGRES_DB: ${DATABASE_NAME:-fitapp_db}
+    ports:
+      - '5432:5432'
+    networks:
+      - fitapp_network
+
+volumes:
+  db_data:
+  redis_data:
+
+networks:
+  fitapp_network:
+    driver: bridge
+

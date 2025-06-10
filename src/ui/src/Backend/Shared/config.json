@@ -1,0 +1,27 @@
+{
+    "database": {
+        "default": {
+            "hostname": "localhost",
+            "port": 5432,
+            "username": "postgres",
+            "password": "password",
+            "databaseName": "fitnessClub"
+        },
+        "test": {
+            "hostname": "localhost",
+            "port": 5432,
+            "username": "postgres",
+            "password": "password",
+            "databaseName": "fitnessClubTest"
+        }
+    },
+    "jwt": {
+        "secretKey": "your-jwt-secret-key",
+        "expirationTime": 86400
+    },
+    "logging": {
+        "logFilePath": "your-path",
+        "logLevel": "info"
+    }
+}
+
