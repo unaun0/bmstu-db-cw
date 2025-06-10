@@ -1,5 +1,167 @@
 \phantomsection\section*{ПРИЛОЖЕНИЕ А}\addcontentsline{toc}{section}{ПРИЛОЖЕНИЕ А}
 
-Далее представлены слайды презентации.
+\begin{lstlisting}[language=SQL,
+	label=alg:perf_gen,
+	caption={Функция генерации тестовых пользователей}]
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE OR REPLACE FUNCTION generate_test_users(num_records INT)
+RETURNS VOID AS $$
+BEGIN
+	INSERT INTO "User" (
+		id, email, phone_number, password,
+		first_name, last_name, gender, birth_date, role
+	)
+	SELECT 
+		gen_random_uuid(),
+		'user' || i || '@example.com',
+		'+7' || lpad((i + 1000000000)::text, 10, '0'),
+		'password' || i,
+		initcap(substr(translate(md5(random()::text), '0123456789','abcdefghij'),1,8)),
+		initcap(substr(translate(md5(random()::text), '0123456789','klmnopqrst'),1,10)),
+		CASE WHEN random()>0.5 THEN 'мужской' ELSE 'женский' END,
+		CURRENT_DATE - (365*20 + floor(random()*365*55))::int,
+		'клиент'
+	FROM generate_series(1, num_records) i;
+END;
+$$ LANGUAGE plpgsql;
+\end{lstlisting}
 
-%\includepdf[pages=-,angle=0,scale=0.8,pagecommand={\thispagestyle{plain}}]{./oth/presentation.pdf}
+\begin{lstlisting}[language=SQL,
+	label=alg:perf_table,
+	caption={Таблица для хранения результатов замеров времени}]
+DROP TABLE IF EXISTS performance_metrics;
+CREATE TABLE performance_metrics (
+	table_size   INT,
+	operation    TEXT,
+	avg_time_ms  DOUBLE PRECISION
+);
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL,
+	label=alg:perf_study,
+	caption={Исследование производительности операций \texttt{INSERT}, \texttt{SELECT}, \texttt{UPDATE} и \texttt{DELETE} на таблице \texttt{User} -- начало},
+	captionpos=t,
+	basicstyle=\ttfamily\small]
+DO $$
+DECLARE
+	sizes int[] := ARRAY(SELECT generate_series(100, 100000, 1000));
+	sz int;
+	total_time double precision;
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL,
+	label=alg:perf_stud3y,
+	caption={Исследование производительности операций \texttt{INSERT}, \texttt{SELECT}, \texttt{UPDATE} и \texttt{DELETE} на таблице \texttt{User} -- продолжение},
+	captionpos=t,
+	basicstyle=\ttfamily\small]
+	avg_time double precision;
+	i int;
+	u_id UUID;
+	t1 timestamp;
+	t2 timestamp;
+BEGIN
+	FOREACH sz IN ARRAY sizes LOOP
+		RAISE NOTICE '========== % записей ========== ', sz;
+		
+		-- INSERT тест
+		TRUNCATE TABLE "User" RESTART IDENTITY CASCADE;
+		PERFORM generate_test_users(sz);
+		total_time := 0;
+		FOR i IN 1..10 LOOP
+			u_id := gen_random_uuid();
+			t1 := clock_timestamp();
+			INSERT INTO "User"(
+				id, email, phone_number, password, 
+				first_name, last_name, gender, birth_date, role
+			)
+			VALUES (
+				u_id, 
+				'test'||i||'@example.com', 
+				'+79001234567', 
+				'pass', 
+				'Имя', 
+				'Фамилия', 
+				'мужской', 
+				CURRENT_DATE - INTERVAL '30 years', 
+				'клиент'
+			);
+			t2 := clock_timestamp();
+			DELETE FROM "User" WHERE id = u_id;
+			total_time := total_time + EXTRACT(EPOCH FROM t2 - t1) * 1000;
+		END LOOP;
+		avg_time := total_time / 10;
+		INSERT INTO performance_metrics VALUES (sz, 'INSERT', avg_time);
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL,
+	label=alg:perf_stud1y,
+	caption={Исследование производительности операций \texttt{INSERT}, \texttt{SELECT}, \texttt{UPDATE} и \texttt{DELETE} на таблице \texttt{User} -- продолжение},
+	captionpos=t,
+	basicstyle=\ttfamily\small]
+		-- SELECT тест
+		TRUNCATE TABLE "User" RESTART IDENTITY CASCADE;
+		PERFORM generate_test_users(sz);
+		total_time := 0;
+		FOR i IN 1..10 LOOP
+			t1 := clock_timestamp();
+			SELECT id INTO u_id FROM "User" ORDER BY random() LIMIT 1;
+			t2 := clock_timestamp();
+			PERFORM 1 FROM "User" WHERE id = u_id;
+			total_time := total_time + EXTRACT(EPOCH FROM t2 - t1) * 1000;
+		END LOOP;
+		avg_time := total_time / 10;
+		INSERT INTO performance_metrics VALUES (sz, 'SELECT', avg_time);
+		
+		-- UPDATE тест
+		TRUNCATE TABLE "User" RESTART IDENTITY CASCADE;
+		PERFORM generate_test_users(sz);
+		total_time := 0;
+		FOR i IN 1..10 LOOP
+			SELECT id INTO u_id FROM "User" ORDER BY random() LIMIT 1;
+			t1 := clock_timestamp();
+			UPDATE "User" SET first_name = 'Обновлено' WHERE id = u_id;
+			t2 := clock_timestamp();
+			total_time := total_time + EXTRACT(EPOCH FROM t2 - t1) * 1000;
+		END LOOP;
+		avg_time := total_time / 10;
+		INSERT INTO performance_metrics VALUES (sz, 'UPDATE', avg_time);
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[language=SQL,
+	label=alg:perf_study2,
+	caption={Исследование производительности операций \texttt{INSERT}, \texttt{SELECT}, \texttt{UPDATE} и \texttt{DELETE} на таблице \texttt{User} -- конец},
+	captionpos=t,
+	basicstyle=\ttfamily\small]
+		-- DELETE тест
+		total_time := 0;
+		FOR i IN 1..10 LOOP
+			SELECT id INTO u_id FROM "User" ORDER BY random() LIMIT 1;
+			t1 := clock_timestamp();
+			DELETE FROM "User" WHERE id = u_id;
+			t2 := clock_timestamp();
+			INSERT INTO "User"(
+				id, email, phone_number, password, 
+				first_name, last_name, gender, birth_date, role
+			)
+			VALUES (
+				gen_random_uuid(),
+				'repl'||i||'@example.com', 
+				'+79990000000', 
+				'pass', 
+				'Имя', 
+				'Фамилия', 
+				'женский', 
+				CURRENT_DATE - INTERVAL '25 years', 
+				'клиент'
+			);
+			total_time := total_time + EXTRACT(EPOCH FROM t2 - t1) * 1000;
+		END LOOP;
+		avg_time := total_time / 10;
+		INSERT INTO performance_metrics VALUES (sz, 'DELETE', avg_time);
+		TRUNCATE TABLE "User" RESTART IDENTITY CASCADE;
+	END LOOP;
+END $$;
+\end{lstlisting}
+
+

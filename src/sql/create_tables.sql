@@ -1,16 +1,14 @@
 -- Удаление всех отношений
+
 DROP TABLE IF EXISTS "Attendance";
 DROP TABLE IF EXISTS "Training";
-DROP TABLE IF EXISTS "Membership";
 DROP TABLE IF EXISTS "Payment";
-DROP TABLE IF EXISTS "OrderItem";
-DROP TABLE IF EXISTS "Order";
+DROP TABLE IF EXISTS "Membership";
 DROP TABLE IF EXISTS "TrainingRoom";
 DROP TABLE IF EXISTS "MembershipType";
 DROP TABLE IF EXISTS "TrainerSpecialization";
 DROP TABLE IF EXISTS "Specialization";
 DROP TABLE IF EXISTS "Trainer";
-DROP TABLE IF EXISTS "UserRole";
 DROP TABLE IF EXISTS "User";
 
 -- Создание отношений
@@ -24,14 +22,8 @@ CREATE TABLE "User" (
     first_name 		TEXT,
     last_name 		TEXT,
 	gender 			TEXT,
-    birth_date 		DATE
-);
-
--- Роль пользователя
-CREATE TABLE "UserRole" (
-    id			UUID,
-	user_id		UUID,
-    "role" 		TEXT
+    birth_date 		DATE,
+	"role" 		    TEXT
 );
 
 -- Тренер
@@ -71,25 +63,10 @@ CREATE TABLE "TrainingRoom" (
     capacity 	INT
 );
 
--- Заказ
-CREATE TABLE "Order" (
-    id 			UUID,
-    user_id		UUID,
-    "date" 		TIMESTAMP,
-    total_price NUMERIC
-);
-
--- Позиция заказа
-CREATE TABLE "OrderItem" (
-    id 					UUID,
-    order_id 			UUID,
-    membership_type_id 	UUID
-);
-
 -- Платеж
 CREATE TABLE "Payment" (
     id				UUID,
-    order_id		UUID,
+    membership_id	UUID,
     transaction_id 	TEXT,
     "date" 			TIMESTAMP,
     "method" 		TEXT,
@@ -101,7 +78,6 @@ CREATE TABLE "Payment" (
 CREATE TABLE "Membership" (
     id 					UUID,
     user_id				UUID,
-    order_id			UUID,
 	membership_type_id	UUID,
 	start_date			DATE,
 	end_date			DATE,

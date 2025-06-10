@@ -68,25 +68,15 @@ ALTER TABLE "User"
 	ADD CONSTRAINT "chk:user.birth_date" CHECK (
 	    birth_date >= CURRENT_DATE - INTERVAL '120 years' AND
 	    birth_date <= CURRENT_DATE - INTERVAL '14 years'
-	);
-
--- Роль пользователя
-ALTER TABLE "UserRole"
-	-- id
-    ADD CONSTRAINT "pk:user_role.id" PRIMARY KEY (id),
-    ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	-- user_id
-	ADD CONSTRAINT "fk:user_role.user_id" FOREIGN KEY (user_id) 
-        REFERENCES "User"(id) ON DELETE CASCADE,
-    ADD CONSTRAINT "uq:user_role.user_id" UNIQUE (user_id),
+	),
 	-- role
-	ADD CONSTRAINT "chk:user_role.role:notnull" CHECK (
+	ADD CONSTRAINT "chk:user.role:notnull" CHECK (
 		"role" IS NOT NULL
 	),
-	ADD CONSTRAINT "chk:user_role.role:length" CHECK (
+	ADD CONSTRAINT "chk:user.role:length" CHECK (
 		length("role") < 32
 	),
-	ADD CONSTRAINT "chk:user_role.role:regexp" CHECK (
+	ADD CONSTRAINT "chk:user.role:regexp" CHECK (
         "role" IN ('клиент', 'тренер', 'администратор')
     );
 
@@ -203,90 +193,6 @@ ALTER TABLE "TrainingRoom"
 	),
     ADD CONSTRAINT "chk:training_room.capacity" CHECK (capacity > 0);
 
--- Заказ
-ALTER TABLE "Order"
-	-- id
-	ADD CONSTRAINT "pk:order.id" PRIMARY KEY (id),
-    ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	-- user_id
-    ADD CONSTRAINT "fk:order.user_id" FOREIGN KEY (user_id) 
-		REFERENCES "User"(id) ON DELETE SET NULL,
-	-- date
-	ALTER COLUMN "date" SET DEFAULT CURRENT_TIMESTAMP,
-	ADD CONSTRAINT "chk:order.date:notnull" CHECK (
-		"date" IS NOT NULL
-	),
-	-- total_price
-	ALTER COLUMN total_price SET DEFAULT 0.0,
-	ADD CONSTRAINT "chk:order.total_price:notnull" CHECK (
-		total_price IS NOT NULL
-	),
-    ADD CONSTRAINT "chk:order.total_price:unsigned" CHECK (
-		total_price >= 0.0
-	);
-
--- Позиция заказа
-ALTER TABLE "OrderItem"
-	-- id
-	ADD CONSTRAINT "pk:order_item.id" PRIMARY KEY (id),
-    ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	-- order_id
-	ADD CONSTRAINT "fk:order_item.order_id" FOREIGN KEY (order_id) 
-		REFERENCES "Order"(id) ON DELETE CASCADE,
-	-- membership_type_id
-	ADD CONSTRAINT "fk:order_item.membership_type_id" 
-		FOREIGN KEY (membership_type_id) 
-		REFERENCES "MembershipType"(id) ON DELETE CASCADE;
-
--- Платеж
-ALTER TABLE "Payment"
-	-- id
-	ADD CONSTRAINT "pk:payment.id" PRIMARY KEY (id),
-    ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	-- order_id
-	ADD CONSTRAINT "fk:payment.order_id" FOREIGN KEY (order_id) 
-		REFERENCES "Order"(id) ON DELETE SET NULL,
-	-- transaction_id
-	ADD CONSTRAINT "chk:payment.transaction_id:notnull" CHECK (
-		transaction_id IS NOT NULL
-	),
-    ADD CONSTRAINT "chk:payment.transaction_id:length" CHECK (
-		length(transaction_id) < 256
-	),
-	ADD CONSTRAINT "uq:payment.transaction_id" UNIQUE (transaction_id),
-	-- date
-	ALTER COLUMN "date" SET DEFAULT CURRENT_TIMESTAMP,
-	ADD CONSTRAINT "chk:payment.date:notnull" CHECK (
-		"date" IS NOT NULL
-	),
-	-- method
-	ALTER COLUMN "method" SET DEFAULT 'наличные',
-	ADD CONSTRAINT "chk:payment.method:notnull" CHECK (
-		"method" IS NOT NULL
-	),
-	ADD CONSTRAINT "chk:payment.method:length" CHECK (
-		length("method") < 64
-	),
-	ADD CONSTRAINT "chk:payment.method:regexp" CHECK (
-		"method" IN ('наличные', 'кредитная карта', 'банковский перевод')
-	),
-	-- gateway
-	ALTER COLUMN "gateway" SET DEFAULT NULL,
-	ADD CONSTRAINT "chk:payment.gateway:length" CHECK (
-		length("gateway") < 64
-	),
-	-- status
-	ALTER COLUMN "status" SET DEFAULT 'ожидает',
-	ADD CONSTRAINT "chk:payment.status:notnull" CHECK (
-		"status" IS NOT NULL
-	),
-	ADD CONSTRAINT "chk:payment.status:length" CHECK (
-		length("status") < 64
-	),
-    ADD CONSTRAINT "chk:payment.status" CHECK (
-		status IN ('ожидает', 'оплачен', 'отменен')
-	);
-   
 -- Абонемент
 ALTER TABLE "Membership"
 	-- id
@@ -295,9 +201,6 @@ ALTER TABLE "Membership"
 	-- user_id
 	ADD CONSTRAINT "fk:membership.user_id" FOREIGN KEY (user_id) 
 		REFERENCES "User"(id) ON DELETE CASCADE,
-	-- order_id
-	ADD CONSTRAINT "fk:membership.order_id" FOREIGN KEY (order_id) 
-		REFERENCES "Order"(id) ON DELETE SET NULL,
 	-- membership_type_id
 	ADD CONSTRAINT "fk:membership.membership_type_id" 
 		FOREIGN KEY (membership_type_id) 
@@ -322,6 +225,55 @@ ALTER TABLE "Membership"
 	),
     ADD CONSTRAINT "chk:membership.available_sessions:unsigned" CHECK (
 		available_sessions >= 0
+	);
+
+-- Платеж
+ALTER TABLE "Payment"
+	-- id
+	ADD CONSTRAINT "pk:payment.id" PRIMARY KEY (id),
+    ALTER COLUMN id SET DEFAULT gen_random_uuid(),
+	-- order_id
+	ADD CONSTRAINT "fk:payment.membership_id" FOREIGN KEY (membership_id) 
+		REFERENCES "Membership"(id) ON DELETE SET NULL,
+	-- transaction_id
+	ADD CONSTRAINT "chk:payment.transaction_id:notnull" CHECK (
+		transaction_id IS NOT NULL
+	),
+    ADD CONSTRAINT "chk:payment.transaction_id:length" CHECK (
+		length(transaction_id) < 256
+	),
+	ADD CONSTRAINT "uq:payment.transaction_id" UNIQUE (transaction_id),
+	-- date
+	ALTER COLUMN "date" SET DEFAULT CURRENT_TIMESTAMP,
+	ADD CONSTRAINT "chk:payment.date:notnull" CHECK (
+		"date" IS NOT NULL
+	),
+	-- method
+	ALTER COLUMN "method" SET DEFAULT 'наличные',
+	ADD CONSTRAINT "chk:payment.method:notnull" CHECK (
+		"method" IS NOT NULL
+	),
+	ADD CONSTRAINT "chk:payment.method:length" CHECK (
+		length("method") < 64
+	),
+	ADD CONSTRAINT "chk:payment.method:regexp" CHECK (
+		"method" IN ('наличные', 'банковская карта', 'банковский перевод')
+	),
+	-- gateway
+	ALTER COLUMN "gateway" SET DEFAULT NULL,
+	ADD CONSTRAINT "chk:payment.gateway:length" CHECK (
+		length("gateway") < 64
+	),
+	-- status
+	ALTER COLUMN "status" SET DEFAULT 'ожидает',
+	ADD CONSTRAINT "chk:payment.status:notnull" CHECK (
+		"status" IS NOT NULL
+	),
+	ADD CONSTRAINT "chk:payment.status:length" CHECK (
+		length("status") < 64
+	),
+    ADD CONSTRAINT "chk:payment.status" CHECK (
+		status IN ('ожидает', 'оплачен', 'отменен')
 	);
 
 -- Тренировка

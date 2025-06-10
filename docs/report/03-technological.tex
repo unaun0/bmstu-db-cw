@@ -2,13 +2,31 @@
 
 \subsection{Средства реализации}
 
-В качестве системы управления базами данных выбрана  \textbf{PostgreSQL}~\cite{postgresql}, которая обеспечивает надёжность, поддерживает механизмы целостности данных и безопасность на уровне ролей и строк (RLS), что важно для строгого разграничения прав доступа между пользователями. PostgreSQL является одной из самых популярных систем управления базами данных~\cite{DBEnginesRanking}, и у меня есть опыт работы с ней.
+В таблице~\ref{tab:subd_comparison} представлено сравнение четырёх наиболее популярных реляционных систем управления базами данных (СУБД), таких как PostgreSQL, MySQL, Microsoft SQL Server и Oracle Database~\cite{DBEnginesRanking}. Для удобства использованы условные обозначения: <<+>> -- высокий уровень соответствия критерию, <<->> -- низкий уровень соответствия, <<+/->> -- частичное соответствие критерию с наличием определённых ограничений.
 
-Для кэширования данных используется  \textbf{Redis}~\cite{redis}, что помогает повысить производительность и сократить нагрузку на базу данных. Redis является популярным и проверенным решением~\cite{DBEnginesRanking}, и у меня есть опыт работы с ним.
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{|p{5.2cm}|>{\centering\arraybackslash}p{3.0cm}|>{\centering\arraybackslash}p{2.0cm}|>{\centering\arraybackslash}p{2.3cm}|>{\centering\arraybackslash}p{2.3cm}|}
+		\hline
+		\textbf{Критерий} & \textbf{PostgreSQL} & \textbf{MySQL} & \textbf{MS SQL Server} & \textbf{Oracle} \\
+		\hline
+		Поддержка надёжности и ACID-свойств~\cite{Gray1981} & + & +/- & + & + \\
+		\hline
+		Совокупная стоимость владения & + & + & +/- & - \\
+		\hline
+	\end{tabular}
+	\caption{Сравнительный анализ реляционных СУБД для информационной системы фитнес-клуба}
+	\label{tab:subd_comparison}
+\end{table}
 
-Язык программирования  \textbf{Swift}~\cite{swift} выбран для разработки приложения, поскольку он идеально интегрируется с экосистемой iOS, поддерживает все необходимые инструменты для работы с базой данных и создания графического интерфейса. Также имеется опыт работы с Swift.
+В качестве СУБД выбрана \textbf{PostgreSQL}~\cite{postgresql}. Данная система поддерживает расширенные механизмы обеспечения целостности данных и предоставляет гибкие средства безопасности, включая разграничение доступа на уровне ролей и строк, что существенно повышает уровень защиты информации и позволяет реализовать строгие политики доступа. Особым преимуществом является то, что PostgreSQL распространяется по лицензии с открытым исходным кодом и не требует лицензионных платежей, что значительно снижает совокупную стоимость владения системой и делает её экономически выгодным решением для различных проектов. Кроме того, имеется практический опыт работы с этой системой, что снижает риски при внедрении.
 
-Выбраны среды разработки \textbf{Xcode}~\cite{xcode} и \textbf{pgAdmin 4}~\cite{pgadmin4}, так как они предоставляют все необходимые инструменты для создания мобильного приложения и управления базой данных.
+
+Для кэширования данных используется  \textbf{Redis}~\cite{redis} -- является популярным решением~\cite{DBEnginesRanking}.
+
+Для разработки интерфейса доступа выбран язык программирования \textbf{Swift}~\cite{swift}, так как он предоставляет все необходимые инструменты для эффективной работы с PostgreSQL и создания удобного пользовательского интерфейса. Кроме того, имеется практический опыт работы с этим языком.
+
+В качестве средств разработки выбраны \textbf{Xcode}~\cite{xcode} и \textbf{pgAdmin 4}~\cite{pgadmin4}. Xcode обеспечивает полноценную среду для разработки интерфейсов на Swift, а pgAdmin 4 предоставляет все необходимые инструменты для управления базой данных PostgreSQL.
 
 \subsection{Реализация базы данных}
 
@@ -18,7 +36,15 @@
 
 Реализации создания таблиц представлены на листингах~\ref{alg:1}-\ref{alg:12}.
 
-\begin{lstlisting}[label=alg:1, caption=Реализация создания отношения User, captionpos=t]
+\begin{lstlisting}[label=alg:1, caption=Реализация создания отношения Trainer, captionpos=t]
+	CREATE TABLE "Trainer" (
+	id 				UUID,
+	user_id			UUID,
+	description 	TEXT
+	);
+\end{lstlisting}
+
+\begin{lstlisting}[label=alg:0, caption=Реализация создания отношения User, captionpos=t]
 CREATE TABLE "User" (
 	id 				UUID,
 	email 			TEXT,
@@ -27,23 +53,8 @@ CREATE TABLE "User" (
 	first_name 		TEXT,
 	last_name 		TEXT,
 	gender 			TEXT,
-	birth_date 		DATE
-);
-\end{lstlisting}
-
-\begin{lstlisting}[label=alg:2, caption=Реализация создания отношения UserRole, captionpos=t]
-CREATE TABLE "UserRole" (
-	id			UUID,
-	user_id		UUID,
-	"role" 		TEXT
-);
-\end{lstlisting}
-
-\begin{lstlisting}[label=alg:3, caption=Реализация создания отношения Trainer, captionpos=t]
-CREATE TABLE "Trainer" (
-	id 				UUID,
-	user_id			UUID,
-	description 	TEXT
+	birth_date 		DATE,
+	"role"			TEXT
 );
 \end{lstlisting}
 
@@ -54,8 +65,8 @@ CREATE TABLE "Specialization" (
 );
 \end{lstlisting}
 
+\newpage
 \begin{lstlisting}[label=alg:4, caption=Реализация создания отношения TrainerSpecialization, captionpos=t]
--- Специализация тренера
 CREATE TABLE "TrainerSpecialization" (
 	id 					UUID,
 	trainer_id			UUID,
@@ -82,40 +93,25 @@ CREATE TABLE "TrainingRoom" (
 );
 \end{lstlisting}
 
-\begin{lstlisting}[label=alg:7, caption=Реализация создания отношения Order, captionpos=t]
-CREATE TABLE "Order" (
-	id 			UUID,
-	user_id		UUID,
-	"date" 		TIMESTAMP,
-	total_price NUMERIC
-);
-\end{lstlisting}
-
-\begin{lstlisting}[label=alg:8, caption=Реализация создания отношения OrderItem, captionpos=t]
-CREATE TABLE "OrderItem" (
-	id 					UUID,
-	order_id 			UUID,
-	membership_type_id 	UUID
-);
-\end{lstlisting}
-
 \begin{lstlisting}[label=alg:9, caption=Реализация создания отношения Payment, captionpos=t]
 CREATE TABLE "Payment" (
-	id				UUID,
-	order_id		UUID,
-	transaction_id 	TEXT,
-	"date" 			TIMESTAMP,
-	"method" 		TEXT,
-	gateway 		TEXT,
-	status 			TEXT
+	id					UUID,
+	user_id				UUID,
+	membership_id		UUID,
+	membership_type_id	UUID,
+	transaction_id 		TEXT,
+	"date" 				TIMESTAMP,
+	"method" 			TEXT,
+	gateway 			TEXT,
+	status 				TEXT
 );
 \end{lstlisting}
 
+\newpage
 \begin{lstlisting}[label=alg:10, caption=Реализация создания отношенияMembership, captionpos=t]
 CREATE TABLE "Membership" (
 	id 					UUID,
 	user_id				UUID,
-	order_id			UUID,
 	membership_type_id	UUID,
 	start_date			DATE,
 	end_date			DATE,
@@ -145,8 +141,20 @@ CREATE TABLE "Training" (
 
 \subsubsection*{Реализация ограничений целостности данных}
 
-Реализации ограничений целостности данных таблиц представлены на листингах~\ref{alg:14}-\ref{alg:26}.
+Реализации ограничений целостности данных таблиц представлены на листингах~\ref{alg:17}-\ref{alg:26}.
 
+\begin{lstlisting}[label=alg:17, caption=Реализация  ограничений целостности данных отношения Specialization, captionpos=t]
+ALTER TABLE "Specialization"
+	ADD CONSTRAINT "pk:specialization.id" PRIMARY KEY (id),
+	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
+	ADD CONSTRAINT "chk:specialization.name:notnull" CHECK (
+	name IS NOT NULL),
+	ADD CONSTRAINT "chk:specialization.name:length" CHECK (
+	length(name) < 128),
+	ADD CONSTRAINT "uq:specialization.name" UNIQUE (name);
+\end{lstlisting}
+
+\newpage
 \begin{lstlisting}[label=alg:14, caption=Реализация  ограничений целостности данных отношения User, captionpos=t]
 ALTER TABLE "User"
 	ADD CONSTRAINT "pk:user.id" PRIMARY KEY (id),
@@ -187,19 +195,9 @@ ALTER TABLE "User"
 		birth_date BETWEEN 
 			CURRENT_DATE - INTERVAL '120 years' AND 
 			CURRENT_DATE - INTERVAL '14 years'
-	);
-\end{lstlisting}
-
-\begin{lstlisting}[label=alg:15, caption=Реализация  ограничений целостности данных отношения UserRole, captionpos=t]
-ALTER TABLE "UserRole"
-	ADD CONSTRAINT "pk:user_role.id" PRIMARY KEY (id),
-	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	ADD CONSTRAINT "fk:user_role.user_id" FOREIGN KEY (user_id) 
-		REFERENCES "User"(id) ON DELETE CASCADE,
-	ADD CONSTRAINT "uq:user_role.user_id" UNIQUE (user_id),
-	ADD CONSTRAINT "chk:user_role.role:notnull" CHECK ("role" IS NOT NULL),
-	ADD CONSTRAINT "chk:user_role.role:length" CHECK (length("role") < 32),
-	ADD CONSTRAINT "chk:user_role.role:regexp" CHECK (
+	ADD CONSTRAINT "chk:user.role:notnull" CHECK ("role" IS NOT NULL),
+	ADD CONSTRAINT "chk:user.role:length" CHECK (length("role") < 32),
+	ADD CONSTRAINT "chk:user.role:regexp" CHECK (
 		"role" IN ('клиент', 'тренер', 'администратор')
 	);
 \end{lstlisting}
@@ -216,17 +214,6 @@ ALTER TABLE "Trainer"
 		description IS NOT NULL),
 	ADD CONSTRAINT "chk:trainer.description:length" CHECK (
 		length(description) < 512);
-\end{lstlisting}
-
-\begin{lstlisting}[label=alg:17, caption=Реализация  ограничений целостности данных отношения Specialization, captionpos=t]
-ALTER TABLE "Specialization"
-	ADD CONSTRAINT "pk:specialization.id" PRIMARY KEY (id),
-	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	ADD CONSTRAINT "chk:specialization.name:notnull" CHECK (
-		name IS NOT NULL),
-	ADD CONSTRAINT "chk:specialization.name:length" CHECK (
-		length(name) < 128),
-	ADD CONSTRAINT "uq:specialization.name" UNIQUE (name);
 \end{lstlisting}
 
 \begin{lstlisting}[label=alg:18, caption=Реализация  ограничений целостности данных отношения TrainerSpecialization, captionpos=t]
@@ -246,49 +233,35 @@ ALTER TABLE "TrainerSpecialization"
 	ADD CONSTRAINT "chk:specialization.name:unsigned" CHECK (years >= 0);
 \end{lstlisting}
 
-\begin{lstlisting}[label=alg:20, caption=Реализация  ограничений целостности данных отношения TrainingRoom, captionpos=t]
-ALTER TABLE "TrainingRoom"
-	ADD CONSTRAINT "pk:training_room.id" PRIMARY KEY (id),
+\begin{lstlisting}[label=alg:25, caption=Реализация  ограничений целостности данных отношения Training, captionpos=t]
+ALTER TABLE "Training"
+	ADD CONSTRAINT "pk:training.id" PRIMARY KEY (id),
 	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	ADD CONSTRAINT "chk:training_room.name:notnull" CHECK (name IS NOT NULL),
-	ADD CONSTRAINT "chk:training_room.name:length" CHECK (length(name) < 64),
-	ADD CONSTRAINT "uq:training_room.name" UNIQUE (name),
-	ADD CONSTRAINT "chk:training_room.capacity:notnull" CHECK (
-		capacity IS NOT NULL),
-	ADD CONSTRAINT "chk:training_room.capacity" CHECK (capacity > 0);
-\end{lstlisting}
-
-\begin{lstlisting}[label=alg:21, caption=Реализация  ограничений целостности данных отношения Order, captionpos=t]
-ALTER TABLE "Order"
-	ADD CONSTRAINT "pk:order.id" PRIMARY KEY (id),
-	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	ADD CONSTRAINT "fk:order.user_id" FOREIGN KEY (user_id) 
-		REFERENCES "User"(id) ON DELETE SET NULL,
+	ADD CONSTRAINT "fk:training.specialization_id" 
+	FOREIGN KEY (specialization_id) 
+	REFERENCES "Specialization"(id) ON DELETE SET NULL,
+	ADD CONSTRAINT "fk:training.room_id" FOREIGN KEY (room_id) 
+	REFERENCES "TrainingRoom"(id) ON DELETE SET NULL,
+	ADD CONSTRAINT "fk:training.trainer_id" FOREIGN KEY (trainer_id) 
+	REFERENCES "Trainer"(id) ON DELETE SET NULL,
 	ALTER COLUMN "date" SET DEFAULT CURRENT_TIMESTAMP,
-	ADD CONSTRAINT "chk:order.date:notnull" CHECK ("date" IS NOT NULL),
-	ALTER COLUMN total_price SET DEFAULT 0.0,
-	ADD CONSTRAINT "chk:order.total_price:notnull" CHECK (
-		total_price IS NOT NULL),
-	ADD CONSTRAINT "chk:order.total_price:unsigned" CHECK (total_price >= 0);
+	ADD CONSTRAINT "chk:training.date:notnull" CHECK ("date" IS NOT NULL);
 \end{lstlisting}
 
-\begin{lstlisting}[label=alg:22, caption=Реализация  ограничений целостности данных отношения OrderItem, captionpos=t]
-ALTER TABLE "OrderItem"
-	ADD CONSTRAINT "pk:order_item.id" PRIMARY KEY (id),
-	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	ADD CONSTRAINT "fk:order_item.order_id" FOREIGN KEY (order_id) 
-		REFERENCES "Order"(id) ON DELETE CASCADE,
-	ADD CONSTRAINT "fk:order_item.membership_type_id" 
-		FOREIGN KEY (membership_type_id) 
-		REFERENCES "MembershipType"(id) ON DELETE CASCADE;
-\end{lstlisting}
-
+\newpage
 \begin{lstlisting}[label=alg:23, caption=Реализация  ограничений целостности данных отношения Payment, captionpos=t]
 ALTER TABLE "Payment"
 	ADD CONSTRAINT "pk:payment.id" PRIMARY KEY (id),
 	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	ADD CONSTRAINT "fk:payment.order_id" FOREIGN KEY (order_id) 
-		REFERENCES "Order"(id) ON DELETE SET NULL,
+	ADD CONSTRAINT "fk:payment.membership_id" FOREIGN KEY (membership_id) 
+	REFERENCES "Membership"(id) ON DELETE SET NULL,
+	ALTER COLUMN membership_id SET DEFAULT NULL,
+	ADD CONSTRAINT "fk:payment.memshipt_id" FOREIGN KEY (membership_type_id) 
+	REFERENCES "MembershipType"(id) ON DELETE SET NULL,
+	ALTER COLUMN membership_type_id SET DEFAULT NULL,
+	ADD CONSTRAINT "fk:payment.user_id" FOREIGN KEY (user_id) 
+	REFERENCES "User"(id) ON DELETE SET NULL,
+	ADD CONSTRAINT "chk:payment.user_id:notnull" CHECK (user_id IS NOT NULL),
 	ADD CONSTRAINT "chk:payment.transaction_id:notnull" CHECK (
 		transaction_id IS NOT NULL),
 	ADD CONSTRAINT "chk:payment.transaction_id:length" CHECK (
@@ -311,8 +284,20 @@ ALTER TABLE "Payment"
 		status IN ('ожидает', 'оплачен', 'отменен'));
 \end{lstlisting}
 
+\begin{lstlisting}[label=alg:20, caption=Реализация  ограничений целостности данных отношения TrainingRoom, captionpos=t]
+ALTER TABLE "TrainingRoom"
+	ADD CONSTRAINT "pk:training_room.id" PRIMARY KEY (id),
+	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
+	ADD CONSTRAINT "chk:training_room.name:notnull" CHECK (name IS NOT NULL),
+	ADD CONSTRAINT "chk:training_room.name:length" CHECK (length(name) < 64),
+	ADD CONSTRAINT "uq:training_room.name" UNIQUE (name),
+	ADD CONSTRAINT "chk:training_room.capacity:notnull" CHECK (
+	capacity IS NOT NULL),
+	ADD CONSTRAINT "chk:training_room.capacity" CHECK (capacity > 0);
+\end{lstlisting}
+
 \begin{lstlisting}[label=alg:19, caption=Реализация  ограничений целостности данных отношения MembershipType, captionpos=t]
-	ALTER TABLE "MembershipType"
+ALTER TABLE "MembershipType"
 	ADD CONSTRAINT "pk:membership_type.id" PRIMARY KEY (id),
 	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
 	ADD CONSTRAINT "chk:membership_type.name:notnull" CHECK (
@@ -335,29 +320,12 @@ ALTER TABLE "Payment"
 	ADD CONSTRAINT "chk:membership_type.days:unsigned" CHECK (days > 0);
 \end{lstlisting}
 
-\begin{lstlisting}[label=alg:25, caption=Реализация  ограничений целостности данных отношения Training, captionpos=t]
-	ALTER TABLE "Training"
-	ADD CONSTRAINT "pk:training.id" PRIMARY KEY (id),
-	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
-	ADD CONSTRAINT "fk:training.specialization_id" 
-	FOREIGN KEY (specialization_id) 
-	REFERENCES "Specialization"(id) ON DELETE SET NULL,
-	ADD CONSTRAINT "fk:training.room_id" FOREIGN KEY (room_id) 
-	REFERENCES "TrainingRoom"(id) ON DELETE SET NULL,
-	ADD CONSTRAINT "fk:training.trainer_id" FOREIGN KEY (trainer_id) 
-	REFERENCES "Trainer"(id) ON DELETE SET NULL,
-	ALTER COLUMN "date" SET DEFAULT CURRENT_TIMESTAMP,
-	ADD CONSTRAINT "chk:training.date:notnull" CHECK ("date" IS NOT NULL);
-\end{lstlisting}
-
 \begin{lstlisting}[label=alg:24, caption=Реализация  ограничений целостности данных отношения Membership, captionpos=t]
 ALTER TABLE "Membership"
 	ADD CONSTRAINT "pk:membership.id" PRIMARY KEY (id),
 	ALTER COLUMN id SET DEFAULT gen_random_uuid(),
 	ADD CONSTRAINT "fk:membership.user_id" FOREIGN KEY (user_id) 
 		REFERENCES "User"(id) ON DELETE CASCADE,
-	ADD CONSTRAINT "fk:membership.order_id" FOREIGN KEY (order_id) 
-		REFERENCES "Order"(id) ON DELETE SET NULL,
 	ADD CONSTRAINT "fk:membership.membership_type_id" 
 		FOREIGN KEY (membership_type_id) 
 		REFERENCES "MembershipType"(id) ON DELETE SET NULL,
@@ -396,7 +364,24 @@ ALTER TABLE "Attendance"
 
 \subsubsection{Реализация триггеров}
 
-Реализации триггеров для: автоматического обновления количества доступных занятий после посещения тренировки, записи на тренировку с учетом проверки количества доступных мест, создания абонемента или продления его после успешного платежа -- представлены на листингах~\ref{alg:27},~\ref{alg:28} и~\ref{alg:29} соответственно.
+Реализации триггеров для автоматического обновления количества доступных занятий после посещения тренировки и записи на тренировку с учетом проверки количества доступных мест -- представлены на листингах~\ref{alg:27} и~\ref{alg:28} соответственно.
+
+\begin{lstlisting}[label=alg:28, caption=Реализация триггера для записи на тренировку с учетом проверки количества доступных мест, captionpos=t]
+CREATE OR REPLACE FUNCTION check_room_capacity()
+RETURNS TRIGGER AS $$
+BEGIN
+	IF (TG_OP = 'INSERT') OR (TG_OP = 'UPDATE' AND NEW.training_id IS DISTINCT FROM OLD.training_id) 
+	THEN
+	IF (SELECT COUNT(*) FROM "Attendance" WHERE training_id = NEW.training_id) >= (SELECT capacity FROM "TrainingRoom" WHERE id = (SELECT room_id  FROM public.training WHERE id = NEW.training_id))
+		THEN RAISE EXCEPTION 'Тренировка уже заполнена';
+	END IF;
+	END IF;
+	RETURN NEW;
+END; $$ LANGUAGE plpgsql;
+CREATE OR REPLACE TRIGGER check_room_capacity_trigger
+BEFORE INSERT ON "Attendance" FOR EACH ROW
+EXECUTE FUNCTION check_room_capacity();
+\end{lstlisting}
 
 \begin{lstlisting}[label=alg:27, caption=Реализация триггера для автоматического обновления количества доступных занятий после посещения тренировки, captionpos=t]
 CREATE OR REPLACE FUNCTION update_available_sessions()
@@ -416,72 +401,16 @@ BEGIN
 		WHERE id = NEW.membership_id;
 	END IF;
 	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+END; $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER attendance_status_update
 AFTER UPDATE OF status ON "Attendance"
 FOR EACH ROW
 EXECUTE FUNCTION update_available_sessions();
 \end{lstlisting}
 
-\begin{lstlisting}[label=alg:28, caption=Реализация триггера для записи на тренировку с учетом проверки количества доступных мест, captionpos=t]
-CREATE OR REPLACE FUNCTION check_room_capacity()
-RETURNS TRIGGER AS $$
-BEGIN
-	IF (TG_OP = 'INSERT') OR (TG_OP = 'UPDATE' AND NEW.training_id IS DISTINCT FROM OLD.training_id) 
-	THEN
-		IF (SELECT COUNT(*) FROM "Attendance" WHERE training_id = NEW.training_id) >= (SELECT capacity FROM "TrainingRoom" WHERE id = (SELECT room_id  FROM public.training WHERE id = NEW.training_id))
-		THEN RAISE EXCEPTION 'Тренировка уже заполнена';
-		END IF;
-	END IF;
-	RETURN NEW;
-END; $$ LANGUAGE plpgsql;
-CREATE OR REPLACE TRIGGER check_room_capacity_trigger
-BEFORE INSERT ON "Attendance" FOR EACH ROW
-EXECUTE FUNCTION check_room_capacity();
-\end{lstlisting}
-
-\begin{lstlisting}[label=alg:29, caption=Реализация триггера для создания абонемента или продления его после успешного платежа , captionpos=t]
-CREATE OR REPLACE FUNCTION create_membership_after_payment()
-RETURNS TRIGGER AS $$
-DECLARE item RECORD;
-BEGIN
-	IF (TG_OP = 'INSERT' AND NEW.status = 'оплачено') OR (TG_OP = 'UPDATE' AND NEW.status = 'оплачено' AND OLD.status IS DISTINCT FROM 'оплачено') 
-	THEN
-		FOR item IN
-			SELECT oi.membership_type_id, o.user_id, mt.duration_days, mt.number_of_sessions
-			FROM "OrderItem" oi
-			JOIN "Order" o ON o.id = oi.order_id
-			JOIN "MembershipType" mt ON mt.id = oi.membership_type_id
-			WHERE o.id = NEW.order_id
-		LOOP
-			IF EXISTS (SELECT 1 FROM "Membership" WHERE user_id = item.user_id AND membership_type_id = item.membership_type_id) 
-			THEN -- обновление
-				UPDATE "Membership"
-				SET 
-				end_date = CURRENT_DATE + INTERVAL '1 day' * item.duration_days,
-				available_sessions = available_sessions + item.number_of_sessions,
-				order_id = NEW.order_id
-				WHERE user_id = item.user_id
-				AND membership_type_id = item.membership_type_id;
-			ELSE
-				INSERT INTO public.membership (id, user_id, membership_type_id, order_id,
-				start_date, end_date, available_sessions)
-				VALUES (gen_random_uuid(), item.user_id, item.membership_type_id, NEW.order_id, CURRENT_DATE, CURRENT_DATE + INTERVAL '1 day' * item.duration_days, item.number_of_sessions);
-			END IF;
-		END LOOP;
-	END IF;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE TRIGGER create_membership_after_payment_trigger
-AFTER INSERT OR UPDATE ON "Payment" FOR EACH ROW
-EXECUTE FUNCTION create_membership_after_payment();
-\end{lstlisting}
-
 \subsubsection{Создание ролевой модели}
 
-Реализация ролевой модели представлена на листингах~\ref{alg:30},~\ref{alg:31} и~\ref{alg:32}.
+Реализация ролевой модели представлена на листингах~\ref{alg:30}, \ref{alg:31}, \ref{alg:32}, \ref{alg:33}, \ref{alg:34} и \ref{alg:35}.
 
 \begin{lstlisting}[label=alg:30, caption=Реализация роли Guest (гость), captionpos=t]
 CREATE ROLE guest WITH LOGIN;
@@ -496,47 +425,92 @@ CREATE ROLE admin WITH LOGIN PASSWORD 'admin' SUPERUSER BYPASSRLS;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO admin;
 \end{lstlisting}
 
-\begin{lstlisting}[label=alg:32, caption=Реализация ролей Client (клиент) и Trainer (тренер), captionpos=t]
+\begin{lstlisting}[label=alg:32, caption=Реализация ролей Client (клиент) и Trainer (тренер) -- начало, captionpos=t]
 CREATE ROLE client WITH LOGIN PASSWORD 'client';
 CREATE ROLE trainer WITH LOGIN PASSWORD 'trainer';
+\end{lstlisting}
+
+\begin{lstlisting}[label=alg:33, caption=Реализация ролей Client (клиент) и Trainer (тренер) -- продолжение, captionpos=t]
 GRANT client TO trainer;
 GRANT ALL ON "User" TO client;
 GRANT ALL ON "User" TO trainer;
 ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY personal_client_trainer_user_policy ON "User" FOR ALL TO client, trainer USING (id = current_user_id());
-CREATE POLICY public_client_trainer_user_policy ON "User" FOR SELECT TO client, trainer USING (TRUE);
+CREATE POLICY personal_client_trainer_user_policy
+	ON "User"
+	FOR ALL
+	TO client, trainer
+	USING (id = current_user_id());
+CREATE POLICY public_client_trainer_user_policy
+	ON "User"
+	FOR SELECT
+	TO client, trainer
+	USING (TRUE);
 GRANT ALL ON "Trainer" TO client;
 GRANT ALL ON "Trainer" TO trainer;
 ALTER TABLE "Trainer" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY public_client_trainer_trainer_policy ON "Trainer" FOR SELECT TO client, trainer USING (TRUE);
-CREATE POLICY personal_trainer_trainer_policy ON "Trainer" FOR ALL TO trainer USING (user_id = current_user_id());
+CREATE POLICY public_client_trainer_trainer_policy
+	ON "Trainer"
+	FOR SELECT
+	TO client, trainer
+	USING (TRUE);
+CREATE POLICY personal_trainer_trainer_policy
+	ON "Trainer"
+	FOR ALL
+	TO trainer
+	USING (user_id = current_user_id());
 GRANT ALL ON "Membership" TO client;
 GRANT ALL ON "Membership" TO trainer;
 ALTER TABLE "Membership" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY client_trainer_membership_policy ON "Membership" FOR ALL TO client, trainer USING (user_id = current_user_id());
-CREATE POLICY trainer_membership_policy ON "Membership" FOR SELECT TO trainer USING (TRUE);
-GRANT ALL ON "Order" TO client;
-GRANT ALL ON "Order" TO trainer;
-ALTER TABLE "Order" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY client_trainer_order_policy ON "Order" FOR ALL TO client, trainer USING (user_id = current_user_id());
-GRANT ALL ON "OrderItem" TO client;
-GRANT ALL ON "OrderItem" TO trainer;
-ALTER TABLE "OrderItem" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY client_trainer_order_item_policy ON "OrderItem" FOR ALL TO client, trainer USING ( order_id IN (
-	SELECT id FROM "Order" WHERE user_id = current_user_id()));
+CREATE POLICY client_trainer_membership_policy
+	ON "Membership"
+	FOR ALL
+	TO client, trainer
+	USING (user_id = current_user_id());
+CREATE POLICY trainer_membership_policy
+	ON "Membership"
+	FOR SELECT
+	TO trainer
+	USING (TRUE);
 GRANT ALL ON "Payment" TO client;
 GRANT ALL ON "Payment" TO trainer;
 ALTER TABLE "Payment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY client_trainer_payment_policy ON "Payment" FOR ALL TO client, trainer USING ( order_id IN (
-	SELECT id  FROM "Order" WHERE user_id = current_user_id()));
+\end{lstlisting}
+
+\begin{lstlisting}[label=alg:34, caption=Реализация ролей Client (клиент) и Trainer (тренер) -- продолжение, captionpos=t]
+CREATE POLICY client_trainer_payment_policy
+	ON "Payment"
+	FOR ALL
+	TO client, trainer
+	USING (user_id = current_user_id());
 GRANT ALL ON "Attendance" TO client;
 GRANT ALL ON "Attendance" TO trainer;
 ALTER TABLE "Attendance" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY client_trainer_attendance_policy ON "Attendance" FOR ALL TO client, trainer USING ( membership_id IN (
-	SELECT id  FROM "Membership" WHERE user_id = current_user_id()));
-CREATE POLICY trainer_attendance_policy  ON "Attendance" FOR ALL TO trainer USING (training_id IN (
-	SELECT id  FROM "Training" WHERE trainer_id = (
-		SELECT id FROM "Trainer" WHERE user_id = current_user_id())));
+CREATE POLICY client_trainer_attendance_policy
+	ON "Attendance"
+	FOR ALL
+	TO client, trainer
+	USING (
+		membership_id IN (
+			SELECT id 
+			FROM "Membership"
+			WHERE user_id = current_user_id()
+		)
+	);
+CREATE POLICY trainer_attendance_policy 
+	ON "Attendance"
+	FOR ALL
+	TO trainer
+	USING (
+		training_id IN (
+			SELECT id 
+			FROM "Training"
+			WHERE trainer_id = (
+				SELECT id
+				FROM "Trainer"
+				WHERE user_id = current_user_id()
+			)
+		)
+	);
 GRANT SELECT ON "Specialization" TO client;
 GRANT SELECT ON "Specialization" TO trainer;
 GRANT SELECT ON "TrainerSpecialization" TO client;
@@ -544,61 +518,134 @@ GRANT SELECT ON "TrainerSpecialization" TO trainer;
 GRANT ALL ON "Training" TO trainer;
 GRANT ALL ON "Training" TO client;
 ALTER TABLE "Training" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY client_training_select_policy ON "Training" FOR SELECT TO client, trainer USING (TRUE);
-CREATE POLICY trainer_training_update_policy ON "Training" FOR ALL TO trainer USING ( trainer_id = (
-	SELECT id  FROM public.trainer  WHERE user_id = current_user_id()));
+CREATE POLICY client_training_select_policy
+	ON "Training"
+	FOR SELECT
+\end{lstlisting}
+
+\newpage
+\begin{lstlisting}[label=alg:35, caption=Реализация ролей Client (клиент) и Trainer (тренер) -- конец, captionpos=t]
+	TO client, trainer
+	USING (TRUE);
+CREATE POLICY trainer_training_update_policy
+	ON "Training"
+	FOR ALL
+	TO trainer
+	USING (
+		trainer_id = (
+			SELECT id 
+			FROM "Trainer"
+			WHERE user_id = current_user_id()
+		)
+	);
 GRANT SELECT ON "MembershipType" TO client;
 GRANT SELECT ON "MembershipType" TO trainer;
 GRANT SELECT ON "TrainingRoom" TO client;
 GRANT SELECT ON "TrainingRoom" TO trainer;
 \end{lstlisting}
 
-\subsection{Тестирование}
-
-На рисунках~\ref{fig:t1} и~\ref{fig:t2} изображено тестирование триггера для создания абонемент или продления его после успешного платежа.
-
-На рисунках~\ref{fig:t3} и~~\ref{fig:t4} изображено тестирование триггеров для: автоматического обновления количества доступных занятий после посещения тренировки, записи на тренировку с учетом проверки количества доступных мест.
-
-\newpage
-\begin{figure}[ht!]
-	\begin{center}
-		\begin{minipage}[b]{0.5\linewidth}
-			\centering
-			\rotatebox{90}{\includegraphics[scale=0.58]{./img/test1.png}}
-			\caption{Обновления статуса записи таблицы Payment}
-			\label{fig:t1}
-		\end{minipage}%
-		\begin{minipage}[b]{0.5\linewidth}
-			\centering
-			\rotatebox{90}{\includegraphics[scale=0.58]{./img/test1.png}}
-			\caption{Добавление записи в таблицу Payment}
-			\label{fig:t2}
-		\end{minipage}
-	\end{center}
-\end{figure}
-
-\newpage
-\begin{figure}[ht!]
-	\begin{center}
-		\rotatebox{90}{\includegraphics[scale=0.58]{./img/test3.png}}
-	\end{center}
-	\caption{Добавление записи в таблицу Attendance и обновление ее статуса}
-	\label{fig:t3}
-\end{figure}
-
-\newpage
-\begin{figure}[ht!]
-	\begin{center}
-		\includegraphics[scale=0.58]{./img/test4.png}
-	\end{center}
-	\caption{Добавление записи в таблицу Attendance при отсутствии доступных мест на тренировку}
-	\label{fig:t4}
-\end{figure}
-
 \subsection{Интерфейс для взаимодействая с базой данных}
 
-Для взаимодействия с базой данных реализовано мобильное приложение для платформы iOS. Визуальное представление интерфейса приведено на рисунках~\ref{ios1}-~\ref{ios2} в приложении А. 
+Для взаимодействия с базой данных было разработано серверное программное обеспечение. Серверная часть предоставляет набор точек доступа по протоколу HTTP~\cite{HTTP_RFC7230} для выполнения операций создания, чтения, обновления и удаления данных. Все запросы обрабатываются в соответствии с принципами REST~\cite{Fielding2000} и документированы с использованием инструмента Swagger~\cite{Swagger}, что обеспечивает удобный доступ к спецификации прикладного программного интерфейса через веб-интерфейс (см. таблицу~\ref{tab:api-operations}).
+
+На рисунках~\ref{fig:swagger_interface_1} и~\ref{fig:swagger_interface_2} показан интерфейс Swagger, который предоставляет визуализацию документации REST API и позволяет выполнять интерактивные запросы к сервису.
+
+\begin{longtable}{|p{2cm}|p{7cm}|p{6cm}|}
+	\hline
+	\textbf{Метод} & \textbf{Путь} & \textbf{Описание} \\
+	\hline
+	\endfirsthead
+	\hline
+	\textbf{Метод} & \textbf{Путь} & \textbf{Описание} \\
+	\hline
+	\endhead
+	\hline
+	POST & /admin/attendances & Создать новое посещение \\
+	\hline
+	GET & /admin/attendances/all & Получить список всех посещений \\
+	\hline
+	DELETE & /admin/attendances/\{id\} & Удалить посещение по ID \\
+	\hline
+	PUT & /admin/attendances/\{id\} &  Обновить посещение по ID \\
+	\hline
+	\caption{Примеры операций интерфейса доступа}
+	\label{tab:api-operations} 
+\end{longtable}
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[scale=0.32]{./img/sw1.png}
+	\caption{Главная страница интерфейса Swagger с перечнем доступных API}
+	\label{fig:swagger_interface_1}
+	
+	\vspace{1em} % небольшой отступ между рисунками
+	
+	\includegraphics[scale=0.32]{./img/sw2.png}
+	\caption{Пример запроса к эндпоинту \textit{GET /user/me} для получения данных авторизованного пользователя}
+	\label{fig:swagger_interface_2}
+\end{figure}
+
+
+\subsection{Тестирование}
+
+В таблицах~\ref{tab:trigger-tests-end} и~\ref{tab:trigger-tests-start} приведены результаты тестирования триггеров для автоматического обновления количества доступных занятий после посещения тренировки и для записи на тренировку с учётом проверки доступных мест.
+
+\begin{table}[H]
+	\centering
+	\caption{Проверка корректности работы триггеров PostgreSQL -- начало}
+	\label{tab:trigger-tests-end}
+	\begin{tabular}{|c|p{5.5cm}|p{5cm}|p{4cm}|}
+		\hline
+		\textbf{№} & \textbf{Входные данные} & \textbf{Ожидаемый \newline результат} & \textbf{Фактический результат} \\
+		\hline
+		
+		\multicolumn{4}{|c|}{\textbf{Триггер update\_available\_sessions}} \\
+		\hline
+		
+		6 & Статус \textit{Attendance} меняется с <<ожидает>> на <<посетил>> & Значение \textit{available\_sessions} уменьшается на 1 & Уменьшено на 1 \\
+		\hline
+		
+		7 & Статус \textit{Attendance} меняется с <<ожидает>> на <<отсутствовал>> & Значение \textit{available\_sessions} уменьшается на 1 & Уменьшено на 1 \\
+		\hline
+		
+		8 & Статус  \textit{Attendance} меняется с <<посетил>> на <<ожидает>> & Значение \textit{available\_sessions} увеличивается на 1 & Увеличено на 1 \\
+		\hline
+		
+		9 & Статус\textit{Attendance}  меняется с <<отсутствовал>> на <<ожидает>> & Значение \textit{available\_sessions} увеличивается на 1 & Увеличено на 1 \\
+		\hline
+		
+		10 & Статус\textit{Attendance}  меняется с <<посетил>> на <<посетил>> & \textit{available\_sessions} не изменяется & Значение не изменилось \\
+		\hline
+		
+		11 & Статус \textit{Attendance} меняется с <<ожидает>> на <<ожидает>> & \textit{available\_sessions} не изменяется & Значение не изменилось \\
+		\hline
+		
+		12 & Запись \textit{Attendance} изменяется, но статус не трогается & \textit{available\_sessions} не изменяется & Значение не изменилось \\
+		\hline
+	\end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+	\centering
+	\caption{Проверка корректности работы триггеров PostgreSQL -- конец}
+	\label{tab:trigger-tests-start}
+ 	\begin{tabular}{|c|p{5.5cm}|p{5cm}|p{4cm}|}
+		\hline
+		\textbf{№} & \textbf{Входные данные} & \textbf{Ожидаемый \newline результат} & \textbf{Фактический результат} \\
+		\hline
+		
+		\multicolumn{4}{|c|}{\textbf{Триггер check\_room\_capacity}} \\
+		\hline
+		
+		1 & Вставка новой записи в \textit{Attendance}, \textit{training\_id} указывает на тренировку с незаполненной комнатой & Запись добавляется успешно & Запись добавлена \\
+		\hline
+		
+		2 & Вставка новой записи в \textit{Attendance}, когда количество уже достигло \textit{capacity} в \textit{TrainingRoom} & Ошибка: \textit{Тренировка уже заполнена} & Ошибка выдана \\
+		\hline
+	\end{tabular}
+\end{table}
 
 \subsection*{Вывод}
 
-В данном разделе представлены выбранные средства реализации, приведены реализации сущностей, ограничений целостности данных, ролевой модели и триггеров. Также описано тестирование триггеров и продемонстрирован интерфейс, обеспечивающий взаимодействие с базой данных.
+В данном разделе представлены выбранные средства реализации, приведены реализации сущностей, ограничений целостности данных, ролевой модели и триггеров. Также описано тестирование триггеров и описан интерфейс, обеспечивающий взаимодействие с базой данных.

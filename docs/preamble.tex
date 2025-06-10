@@ -6,7 +6,7 @@
 \usepackage[14pt]{extsizes}
 
 \usepackage[table]{xcolor}
-
+\usepackage{longtable}
 \usepackage{graphicx}
 \usepackage{multirow}
 
@@ -125,16 +125,16 @@
 	xleftmargin=17pt,
 	frame=single,
 	tabsize=4,
-	captionpos=b,
+	captionpos=t,
 	breaklines=true,
 	breakatwhitespace=true,
 	escapeinside={\#*}{*)},
 	inputencoding=utf8x,
 	backgroundcolor=\color{white},
 	numberstyle=,
-	keywordstyle=\color{blue},
-	stringstyle=\color{red!90!black},
-	commentstyle=\color{green!50!black},
+	keywordstyle=\color{black},
+	stringstyle=\color{black},
+	commentstyle=\color{black},
 	morekeywords={
 		UUID, TEXT, DATE, NUMERIC, INT, PRIMARY, KEY, REFERENCES, FOREIGN, CHECK, CONSTRAINT, UNIQUE, NOT, NULL, DEFAULT,
 		CREATE, TABLE, ALTER, ADD, DROP, IF, EXISTS, CASCADE, SET, BETWEEN, IS, LENGTH, ON, DELETE, REPLACE, FUNCTION, AFTER, OF, FOR, EACH, ROW, LANGUAGE, RETURN, NEW, RETURNS, OLD, ELSIF, BEFORE, DECLARE, RECORD, LOOP, WITH, LOGIN, TO, PASSWORD, SUPERUSER, BYPASSRLS, PRIVILEGES, TABLES, SCHEMA, POLICY, SECURITY, ENABLE,},

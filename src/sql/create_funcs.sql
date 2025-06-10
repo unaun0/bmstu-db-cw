@@ -16,10 +16,10 @@ BEGIN
         SET available_sessions = available_sessions + 1
         WHERE id = NEW.membership_id;
     END IF;
-
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE TRIGGER attendance_status_update
 AFTER UPDATE OF status ON "Attendance"
 FOR EACH ROW
@@ -60,70 +60,6 @@ CREATE OR REPLACE TRIGGER check_room_capacity_trigger
 BEFORE INSERT ON "Attendance"
 FOR EACH ROW
 EXECUTE FUNCTION check_room_capacity();
-
--- Триггер для создания абонемента или продления его после успешного платежа
-CREATE OR REPLACE FUNCTION create_membership_after_payment()
-RETURNS TRIGGER AS $$
-DECLARE
-    item RECORD;  -- курсор
-BEGIN
-    -- Проверка: статус стал 'оплачено', а раньше не был
-    IF (TG_OP = 'INSERT' AND NEW.status = 'оплачен') OR 
-	   (TG_OP = 'UPDATE' AND NEW.status = 'оплачен' AND 
-		OLD.status != 'оплачен') 
-	THEN
-	    -- Перебираем все элементы заказа, связанные с этим платежом
-        FOR item IN
-            SELECT 
-                oi.membership_type_id,
-                o.user_id,
-                mt.days,
-                mt.sessions
-            FROM "OrderItem" oi
-            JOIN "Order" o ON o.id = oi.order_id
-            JOIN "MembershipType" mt ON mt.id = oi.membership_type_id
-            WHERE o.id = NEW.order_id
-        LOOP
-            IF EXISTS (
-                SELECT 1
-                FROM "Membership"
-                WHERE user_id = item.user_id
-                AND membership_type_id = item.membership_type_id
-            ) 
-            THEN -- обновление
-                UPDATE "Membership"
-                SET 
-                    end_date = CURRENT_DATE + INTERVAL '1 day' * item.days,
-                    available_sessions = available_sessions + item.sessions,
-                    order_id = NEW.order_id
-                WHERE user_id = item.user_id
-                AND membership_type_id = item.membership_type_id;
-            ELSE
-                INSERT INTO "Membership" (
-                    id, user_id, membership_type_id, order_id,
-                    start_date, end_date, available_sessions
-                )
-                VALUES (
-                    gen_random_uuid(),
-                    item.user_id,
-                    item.membership_type_id,
-                    NEW.order_id,
-                    CURRENT_DATE,
-                    CURRENT_DATE + INTERVAL '1 day' * item.days,
-                    item.sessions
-                );
-            END IF;
-        END LOOP;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE TRIGGER create_membership_after_payment_trigger
-AFTER INSERT OR UPDATE ON "Payment"
-FOR EACH ROW
-EXECUTE FUNCTION create_membership_after_payment();
-
 
 -- Функция для регистрации пользователя
 CREATE OR REPLACE FUNCTION register_user(

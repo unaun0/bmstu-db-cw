@@ -1,15 +1,3 @@
--- Гость
-REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM guest;
-DROP ROLE IF EXISTS guest;
-
-CREATE ROLE guest WITH LOGIN;
-GRANT EXECUTE ON FUNCTION register_user(
-	UUID, TEXT, TEXT, TEXT, TEXT, TEXT, DATE, TEXT
-) TO guest;
-GRANT EXECUTE ON FUNCTION login_user(TEXT, TEXT) TO guest;
-
--- Клиент и Тренер
-
 DROP POLICY IF EXISTS personal_client_trainer_user_policy ON "User";
 DROP POLICY IF EXISTS public_client_trainer_user_policy ON "User";
 DROP POLICY IF EXISTS public_client_trainer_trainer_policy ON "Trainer";
@@ -27,18 +15,24 @@ REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM client;
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM trainer;
 DROP ROLE IF EXISTS trainer;
 DROP ROLE IF EXISTS client;
+REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM guest;
+DROP ROLE IF EXISTS guest;
+REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM admin;
+DROP ROLE IF EXISTS admin;
 
--- Клиент
+CREATE ROLE guest WITH LOGIN;
+GRANT EXECUTE ON FUNCTION register_user(
+	UUID, TEXT, TEXT, TEXT, TEXT, TEXT, DATE, TEXT
+) TO guest;
+GRANT EXECUTE ON FUNCTION login_user(TEXT, TEXT) TO guest;
+
 CREATE ROLE client WITH
     LOGIN
     PASSWORD 'client';
-
--- Тренер
 CREATE ROLE trainer WITH
     LOGIN
     PASSWORD 'trainer';
 GRANT client TO trainer;
-
 GRANT ALL ON "User" TO client;
 GRANT ALL ON "User" TO trainer;
 ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
@@ -81,30 +75,6 @@ CREATE POLICY trainer_membership_policy
     TO trainer
     USING (TRUE);
 
-GRANT ALL ON "Order" TO client;
-GRANT ALL ON "Order" TO trainer;
-ALTER TABLE "Order" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY client_trainer_order_policy
-    ON "Order"
-    FOR ALL
-    TO client, trainer
-    USING (user_id = current_user_id());
-
-GRANT ALL ON "OrderItem" TO client;
-GRANT ALL ON "OrderItem" TO trainer;
-ALTER TABLE "OrderItem" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY client_trainer_order_item_policy
-    ON "OrderItem"
-    FOR ALL
-    TO client, trainer
-    USING (
-		order_id IN (
-			SELECT id 
-			FROM "Order"
-			WHERE user_id = current_user_id()
-		)
-	);
-
 GRANT ALL ON "Payment" TO client;
 GRANT ALL ON "Payment" TO trainer;
 ALTER TABLE "Payment" ENABLE ROW LEVEL SECURITY;
@@ -112,13 +82,7 @@ CREATE POLICY client_trainer_payment_policy
     ON "Payment"
     FOR ALL
     TO client, trainer
-    USING (
-		order_id IN (
-			SELECT id 
-			FROM "Order"
-			WHERE user_id = current_user_id()
-		)
-	);
+    USING (user_id = current_user_id());
 
 GRANT ALL ON "Attendance" TO client;
 GRANT ALL ON "Attendance" TO trainer;
@@ -182,9 +146,6 @@ GRANT SELECT ON "MembershipType" TO trainer;
 GRANT SELECT ON "TrainingRoom" TO client;
 GRANT SELECT ON "TrainingRoom" TO trainer;
 
--- Администратор
-REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM admin;
-DROP ROLE IF EXISTS admin;
 
 CREATE ROLE admin WITH
     LOGIN   		 	-- Роль может использоваться для входа в PostgreSQL (становится полноценным пользователем)
